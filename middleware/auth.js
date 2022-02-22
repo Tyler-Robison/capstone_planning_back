@@ -21,7 +21,7 @@ function authenticateJWT(req, res, next) {
     if (authHeader) {
       const token = authHeader.replace(/^[Bb]earer /, "").trim();
       res.locals.user = jwt.verify(token, SECRET_KEY);
-      console.log('token test', res.locals.user)
+      // console.log('token test', res.locals.user)
     }
     return next();
   } catch (err) {
@@ -61,15 +61,28 @@ function ensureAdmin(req, res, next) {
 }
 
 /** Middleware to use when they must provide a valid token & be user matching
- *  username provided as route param.
+ *  id provided as route param.
  *
  *  If not, raises Unauthorized.
  */
 
+// old one that uses username from param for validation. 
+// function ensureCorrectUserOrAdmin(req, res, next) {
+//   try {
+//     const user = res.locals.user;
+//     if (!(user && (user.isAdmin || user.username === req.params.username))) {
+//       throw new UnauthorizedError();
+//     }
+//     return next();
+//   } catch (err) {
+//     return next(err);
+//   }
+// }
+
 function ensureCorrectUserOrAdmin(req, res, next) {
   try {
     const user = res.locals.user;
-    if (!(user && (user.isAdmin || user.username === req.params.username))) {
+    if (!(user && (user.isAdmin || user.id === req.params.id))) {
       throw new UnauthorizedError();
     }
     return next();

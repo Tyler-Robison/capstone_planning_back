@@ -16,7 +16,7 @@ const { BCRYPT_WORK_FACTOR } = require("../config.js");
 class User {
   /** authenticate user with username, password.
    *
-   * Returns { username, first_name, last_name, email, is_admin }
+   * Returns { id, username, first_name, last_name, email, is_admin }
    *
    * Throws UnauthorizedError is user not found or wrong password.
    **/
@@ -25,7 +25,8 @@ class User {
     // try to find the user first
     // console.log('inside User.auth')
     const result = await db.query(
-      `SELECT username,
+          `SELECT id, 
+                  username,
                   password,
                   first_name AS "firstName",
                   last_name AS "lastName",
@@ -52,7 +53,7 @@ class User {
 
   /** Register user with data.
    *
-   * Returns { username, firstName, lastName, email, isAdmin }
+   * Returns { id, username, firstName, lastName, email, isAdmin }
    *
    * Throws BadRequestError on duplicates.
    **/
@@ -81,14 +82,15 @@ class User {
             email,
             is_admin)
            VALUES ($1, $2, $3, $4, $5, $6)
-           RETURNING username, first_name AS "firstName", last_name AS "lastName", email, is_admin AS "isAdmin"`,
+           RETURNING username, first_name AS "firstName", last_name AS "lastName", email, is_admin AS "isAdmin", id`,
+      // added id
       [
         username,
         hashedPassword,
         firstName,
         lastName,
         email,
-        isAdmin,
+        isAdmin
       ],
     );
 
@@ -104,7 +106,7 @@ class User {
 
   static async findAll() {
     const result = await db.query(
-      `SELECT username,
+      `SELECT id, username,
                   first_name AS "firstName",
                   last_name AS "lastName",
                   email,
@@ -123,22 +125,22 @@ class User {
    * Throws NotFoundError if user not found.
    **/
 
-  static async get(username) {
-    console.log('user model', username)
+  static async get(id) {
+    console.log('user model', id)
     const userRes = await db.query(
-      `SELECT username,
+      `SELECT id, username,
                   first_name AS "firstName",
                   last_name AS "lastName",
                   email,
                   is_admin AS "isAdmin"
            FROM users
-           WHERE username = $1`,
-      [username],
+           WHERE id = $1`,
+      [id],
     );
 
     const user = userRes.rows[0];
 
-    if (!user) throw new NotFoundError(`No user: ${username}`);
+    if (!user) throw new NotFoundError(`No user: ${id}`);
 
     return user;
   }
@@ -193,17 +195,17 @@ class User {
 
   /** Delete given user from database; returns 	"deleted": user_name */
 
-  static async remove(username) {
+  static async remove(id) {
     let result = await db.query(
       `DELETE
            FROM users
-           WHERE username = $1
+           WHERE id = $1
            RETURNING username`,
-      [username],
+      [id],
     );
     const user = result.rows[0];
 
-    if (!user) throw new NotFoundError(`No user: ${username}`);
+    if (!user) throw new NotFoundError(`No user: ${id}`);
   }
 
 
