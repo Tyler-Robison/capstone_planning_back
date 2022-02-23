@@ -68,9 +68,9 @@ router.get("/", ensureAdmin, async function (req, res, next) {
  * Authorization required: admin or same user as :username
  **/
 
-router.get("/:username", ensureCorrectUserOrAdmin, async function (req, res, next) {
+router.get("/:id", ensureCorrectUserOrAdmin, async function (req, res, next) {
   try {
-    const user = await User.get(req.params.username);
+    const user = await User.get(req.params.id);
     return res.json({ user });
   } catch (err) {
     return next(err);
@@ -88,7 +88,7 @@ router.get("/:username", ensureCorrectUserOrAdmin, async function (req, res, nex
  * Authorization required: admin or same user as :username
  **/
 
-router.patch("/:username", ensureCorrectUserOrAdmin, async function (req, res, next) {
+router.patch("/:id", ensureCorrectUserOrAdmin, async function (req, res, next) {
   try {
     const validator = jsonschema.validate(req.body, userUpdateSchema);
     if (!validator.valid) {
@@ -98,7 +98,7 @@ router.patch("/:username", ensureCorrectUserOrAdmin, async function (req, res, n
 
     const incoming = req.body
     console.log('backend-incoming', incoming)
-    const user = await User.update(req.params.username, req.body);
+    const user = await User.update(req.params.id, req.body);
     return res.json({ user });
   } catch (err) {
     return next(err);
@@ -106,15 +106,15 @@ router.patch("/:username", ensureCorrectUserOrAdmin, async function (req, res, n
 });
 
 
-/** DELETE /[username]  =>  { deleted: username }
+/** DELETE /[id]  =>  { deleted: id }
  *
- * Authorization required: admin or same user as :username
+ * Authorization required: admin or same user as :id
  **/
 
-router.delete("/:username", ensureCorrectUserOrAdmin, async function (req, res, next) {
+router.delete("/:id", ensureCorrectUserOrAdmin, async function (req, res, next) {
   try {
-    await User.remove(req.params.username);
-    return res.json({ deleted: req.params.username });
+    await User.remove(req.params.id);
+    return res.json({ deleted: req.params.id });
   } catch (err) {
     return next(err);
   }

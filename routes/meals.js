@@ -14,25 +14,7 @@ const generateMealPlanURL = 'https://api.spoonacular.com/mealplanner/generate'
 // req.params = URL params
 
 
-router.get('/ingredient', async (req, res, next) => {
-    try {
 
-        const { ingredients } = req.query
-        console.log('ingred', ingredients)
-        const numResults = 5;
-
-        const formattedIngredients = formatIngredients(ingredients);
-
-        // const axiosRes = await axios.get(recipeIngredientURL, params)
-
-        const axiosRes = await axios.get(`${recipeIngredientURL}?ingredients=${formattedIngredients}&number=${numResults}&apiKey=${SPOON_API_KEY}`)
-        const recipes = axiosRes.data
-        console.log('axios res recipeByIng', recipes)
-        return res.status(200).json(recipes)
-    } catch (err) {
-        return next(err);
-    }
-})
 
 router.get('/', async (req, res, next) => {
     try {

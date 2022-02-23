@@ -162,7 +162,7 @@ class User {
    * MUST ENSURE correctUser or admin access for password update
    */
 
-  static async update(username, data) {
+  static async update(id, data) {
     if (data.password) {
       data.password = await bcrypt.hash(data.password, BCRYPT_WORK_FACTOR);
     }
@@ -174,20 +174,20 @@ class User {
         lastName: "last_name",
         isAdmin: "is_admin",
       });
-    const usernameVarIdx = "$" + (values.length + 1);
+    const idVarIdx = "$" + (values.length + 1);
 
     const querySql = `UPDATE users 
                       SET ${setCols} 
-                      WHERE username = ${usernameVarIdx} 
+                      WHERE id = ${idVarIdx} 
                       RETURNING username,
                                 first_name AS "firstName",
                                 last_name AS "lastName",
                                 email,
                                 is_admin AS "isAdmin"`;
-    const result = await db.query(querySql, [...values, username]);
+    const result = await db.query(querySql, [...values, id]);
     const user = result.rows[0];
 
-    if (!user) throw new NotFoundError(`No user: ${username}`);
+    if (!user) throw new NotFoundError(`No user: ${id}`);
 
     delete user.password;
     return user;

@@ -25,7 +25,7 @@ app.use(authenticateJWT);
 
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
-app.use("/recipe", recipeRoutes);
+app.use("/recipes", recipeRoutes);
 app.use("/meals", mealRoutes)
 
 

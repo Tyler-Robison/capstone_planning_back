@@ -8,6 +8,7 @@ const { BadRequestError } = require("../expressError");
 const SPOON_API_KEY = require('../secret')
 const router = new express.Router();
 const recipeIngredientURL = 'https://api.spoonacular.com/recipes/findByIngredients'
+const complexSearch = 'https://api.spoonacular.com/recipes/complexSearch'
 const { formatIngredients } = require('../Support/helpers')
 const { ensureCorrectUserOrAdmin } = require("../middleware/auth");
 const Recipe = require("../models/recipe");
@@ -49,6 +50,9 @@ const Recipe = require("../models/recipe");
 //     }
 // })
 
+// both of these should require logged in!!!!!!!
+// TODO: login verification
+
 router.get('/ingredient', async (req, res, next) => {
     try {
 
@@ -69,6 +73,41 @@ router.get('/ingredient', async (req, res, next) => {
     }
 })
 
+
+router.get('/complex', async (req, res, next) => {
+    try {
+
+        const { ingredients, nutrientObj } = req.query
+        const formattedNutrients = JSON.parse(nutrientObj)
+
+        // constructs URL nutrient string, skips any nutrients user didn't include in form. 
+        // &calories=800&sodium=600
+
+        // ****************************************************
+        // MUST BE maxSodium, minProtein etc.
+        // ****************************************************
+        const nutrientArr = [];
+        for (const [key, value] of Object.entries(formattedNutrients)) {
+            if (value !== '') {
+                nutrientArr.push(`&${key}=${value}`)
+            }
+        }
+
+        const nutrientStr = nutrientArr.join('');
+        console.log('nut str', nutrientStr)
+        const numResults = 5;
+        const formattedIngredients = formatIngredients(ingredients);
+      
+        const axiosRes = await axios.get(`${complexSearch}?includeIngredients=${formattedIngredients}${nutrientStr}&number=${numResults}&fillIngredients=true&apiKey=${SPOON_API_KEY}`)
+        const recipes = axiosRes.data
+        // console.log('axios recipes res', recipes)
+        return res.status(200).json(recipes)
+
+    } catch (err) {
+        return next(err)
+    }
+})
+
 router.get('/detail', async (req, res, next) => {
     try {
 
@@ -86,7 +125,7 @@ router.get('/detail', async (req, res, next) => {
 })
 
 // get all saved recipes for a given user
-router.get('/:username', ensureCorrectUserOrAdmin, async (req, res, next) => {
+router.get('/:id', ensureCorrectUserOrAdmin, async (req, res, next) => {
     try {
         const token = res.locals.user
         const userId = token.id
@@ -98,9 +137,8 @@ router.get('/:username', ensureCorrectUserOrAdmin, async (req, res, next) => {
 })
 
 // save recipe for a given user
-router.post('/save/:username', ensureCorrectUserOrAdmin, async (req, res, next) => {
+router.post('/save/:id', ensureCorrectUserOrAdmin, async (req, res, next) => {
     try {
-        
         const recipeDetail = req.body
         const recipeId = recipeDetail.id
         const recipeName = recipeDetail.title
@@ -117,12 +155,13 @@ router.post('/save/:username', ensureCorrectUserOrAdmin, async (req, res, next) 
 
 // deletion should be based on user/recipe id, both of which should be in URL params
 // ensureCorrentUserOrAdmin is setup to check username only
-router.delete('/delete/:username', ensureCorrectUserOrAdmin, async (req, res, next) => {
+router.delete('/delete/:id/:recipeId', ensureCorrectUserOrAdmin, async (req, res, next) => {
     try {
-        const token = res.locals.user
-        const userId = token.id
-        const deleteRes = await Recipe.remove()
-    } catch(err) {
+        // const token = res.locals.user
+        // const userId = token.id
+        const { id, recipeId } = req.params
+        const deleteRes = await Recipe.remove(id, recipeId)
+    } catch (err) {
         console.log(err)
     }
 })

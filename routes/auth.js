@@ -27,7 +27,7 @@ router.post("/token", async function (req, res, next) {
 
         const { username, password } = req.body;
         const user = await User.authenticate(username, password);
-       console.log('login user', user)
+        console.log('login user', user)
         const token = createToken(user);
         console.log('login token', token)
         // return res.json({ token, user });
@@ -49,17 +49,13 @@ router.post("/token", async function (req, res, next) {
 
 router.post("/register", async function (req, res, next) {
     try {
-        // console.log('********************************8')
         const validator = jsonschema.validate(req.body, userRegisterSchema);
         if (!validator.valid) {
             const errs = validator.errors.map(e => e.stack);
             throw new BadRequestError(errs);
         }
 
-        // console.log('********************************8')
         const newUser = await User.register({ ...req.body, isAdmin: false });
-        // newUser has id now
-        console.log('check id', newUser)
         const token = createToken(newUser);
         return res.status(201).json({ token });
     } catch (err) {
