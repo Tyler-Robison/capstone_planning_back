@@ -28,9 +28,6 @@ class User {
       `SELECT id, 
                   username,
                   password,
-                  first_name AS "firstName",
-                  last_name AS "lastName",
-                  email,
                   is_admin AS "isAdmin"
            FROM users
            WHERE username = $1`,
@@ -59,7 +56,7 @@ class User {
    **/
 
   static async register(
-    { username, password, firstName, lastName, email, isAdmin }) {
+    { username, password, isAdmin }) {
     const duplicateCheck = await db.query(
       `SELECT username
            FROM users
@@ -77,19 +74,13 @@ class User {
       `INSERT INTO users
            (username,
             password,
-            first_name,
-            last_name,
-            email,
             is_admin)
-           VALUES ($1, $2, $3, $4, $5, $6)
-           RETURNING username, first_name AS "firstName", last_name AS "lastName", email, is_admin AS "isAdmin", id`,
+           VALUES ($1, $2, $3)
+           RETURNING username, is_admin AS "isAdmin", id`,
       // added id
       [
         username,
         hashedPassword,
-        firstName,
-        lastName,
-        email,
         isAdmin
       ],
     );
@@ -107,9 +98,6 @@ class User {
   static async findAll() {
     const result = await db.query(
       `SELECT id, username,
-                  first_name AS "firstName",
-                  last_name AS "lastName",
-                  email,
                   is_admin AS "isAdmin"
            FROM users
            ORDER BY username`,
@@ -120,7 +108,7 @@ class User {
 
   /** Given a username, return data about a specific user.
    *
-   * Returns { username, first_name, last_name, email, is_admin }
+   * Returns { username, is_admin }
    *
    * Throws NotFoundError if user not found.
    **/
@@ -128,9 +116,6 @@ class User {
   static async get(id) {
     const userRes = await db.query(
       `SELECT id, username,
-                  first_name AS "firstName",
-                  last_name AS "lastName",
-                  email,
                   is_admin AS "isAdmin",
                   points
            FROM users
