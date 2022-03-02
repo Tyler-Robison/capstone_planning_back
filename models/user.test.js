@@ -1,6 +1,8 @@
+"use strict";
 
+const db = require("../db.js");
 
-
+const User = require('./user.js')
 const {
     commonBeforeAll,
     commonBeforeEach,
