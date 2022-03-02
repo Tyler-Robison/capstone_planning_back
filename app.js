@@ -11,7 +11,7 @@ const { authenticateJWT } = require("./middleware/auth");
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");
 const recipeRoutes = require("./routes/recipes")
-const mealRoutes = require("./routes/meals");
+const mealRoutes = require("./routes/mealPlanner")
 
 // const morgan = require("morgan");
 

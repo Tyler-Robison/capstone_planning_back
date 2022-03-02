@@ -49,28 +49,9 @@ function ensureLoggedIn(req, res, next) {
  *  If not, raises Unauthorized.
  */
 
-function ensureAdmin(req, res, next) {
-  try {
-    if (!res.locals.user || !res.locals.user.isAdmin) {
-      throw new UnauthorizedError();
-    }
-    return next();
-  } catch (err) {
-    return next(err);
-  }
-}
-
-/** Middleware to use when they must provide a valid token & be user matching
- *  id provided as route param.
- *
- *  If not, raises Unauthorized.
- */
-
-// old one that uses username from param for validation. 
-// function ensureCorrectUserOrAdmin(req, res, next) {
+// function ensureAdmin(req, res, next) {
 //   try {
-//     const user = res.locals.user;
-//     if (!(user && (user.isAdmin || user.username === req.params.username))) {
+//     if (!res.locals.user || !res.locals.user.isAdmin) {
 //       throw new UnauthorizedError();
 //     }
 //     return next();
@@ -78,6 +59,12 @@ function ensureAdmin(req, res, next) {
 //     return next(err);
 //   }
 // }
+
+/** Middleware to use when they must provide a valid token & be user matching
+ *  id provided as route param.
+ *
+ *  If not, raises Unauthorized.
+ */
 
 function ensureCorrectUserOrAdmin(req, res, next) {
   try {
@@ -96,6 +83,6 @@ function ensureCorrectUserOrAdmin(req, res, next) {
 module.exports = {
   authenticateJWT,
   ensureLoggedIn,
-  ensureAdmin,
+  // ensureAdmin,
   ensureCorrectUserOrAdmin,
 };

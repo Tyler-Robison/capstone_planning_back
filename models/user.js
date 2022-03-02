@@ -2,7 +2,7 @@
 
 const db = require("../db");
 const bcrypt = require("bcrypt");
-const { sqlForPartialUpdate } = require("../helpers/sql");
+// const { sqlForPartialUpdate } = require("../helpers/sql");
 const {
   NotFoundError,
   BadRequestError,
@@ -25,7 +25,7 @@ class User {
     // try to find the user first
     // console.log('inside User.auth')
     const result = await db.query(
-          `SELECT id, 
+      `SELECT id, 
                   username,
                   password,
                   first_name AS "firstName",
@@ -126,71 +126,32 @@ class User {
    **/
 
   static async get(id) {
-    console.log('user model', id)
     const userRes = await db.query(
       `SELECT id, username,
                   first_name AS "firstName",
                   last_name AS "lastName",
                   email,
-                  is_admin AS "isAdmin"
+                  is_admin AS "isAdmin",
+                  points
            FROM users
            WHERE id = $1`,
       [id],
     );
 
     const user = userRes.rows[0];
+    console.log('got user', user)
 
     if (!user) throw new NotFoundError(`No user: ${id}`);
 
     return user;
   }
 
-  /** Update user data with `data`.
-   *
-   * This is a "partial update" --- it's fine if data doesn't contain
-   * all the fields; this only changes provided ones.
-   *
-   * Data can include:
-   *   { firstName, lastName, password, email, isAdmin }
-   *
-   * Returns { username, firstName, lastName, email, isAdmin }
-   *
-   * Throws NotFoundError if not found.
-   *
-   * WARNING: update can set a new password or make a user an admin.
-   * MUST USE userUpdate validation to eliminate risk of creating admin
-   * MUST ENSURE correctUser or admin access for password update
-   */
-
-  static async update(id, data) {
-    if (data.password) {
-      data.password = await bcrypt.hash(data.password, BCRYPT_WORK_FACTOR);
-    }
-
-    const { setCols, values } = sqlForPartialUpdate(
-      data,
-      {
-        firstName: "first_name",
-        lastName: "last_name",
-        isAdmin: "is_admin",
-      });
-    const idVarIdx = "$" + (values.length + 1);
-
-    const querySql = `UPDATE users 
-                      SET ${setCols} 
-                      WHERE id = ${idVarIdx} 
-                      RETURNING username,
-                                first_name AS "firstName",
-                                last_name AS "lastName",
-                                email,
-                                is_admin AS "isAdmin"`;
-    const result = await db.query(querySql, [...values, id]);
-    const user = result.rows[0];
-
-    if (!user) throw new NotFoundError(`No user: ${id}`);
-
-    delete user.password;
-    return user;
+  static async setPoints(id, data) {
+    const result = await db.query(`UPDATE users 
+                      SET points = $2
+                      WHERE id = $1 
+                      RETURNING id, points`, [id, data]);
+    return result.rows[0]
   }
 
   /** Delete given user from database; returns 	"deleted": user_name */

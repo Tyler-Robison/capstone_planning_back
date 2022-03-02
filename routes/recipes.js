@@ -18,17 +18,21 @@ const Recipe = require("../models/recipe");
 // req.query = query string
 // req.params = URL params
 
-// router.post('/ingredient', async (req, res, next) => {
+// both of these should require logged in!!!!!!!
+// TODO: login verification
+
+// router.get('/ingredient', async (req, res, next) => {
 //     try {
 
-//         const { ingredients } = req.body
+//         const { ingredients } = req.query
+//         console.log('ingred', ingredients)
 //         const numResults = 5;
 
 //         const formattedIngredients = formatIngredients(ingredients);
 
 //         // const axiosRes = await axios.get(recipeIngredientURL, params)
 
-//         const axiosRes = await axios.get(`${recipeIngredientURL}?ingredients=${formattedIngredients}&number=${numResults}&apiKey=${SECRET_KEY}`)
+//         const axiosRes = await axios.get(`${recipeIngredientURL}?ingredients=${formattedIngredients}&number=${numResults}&apiKey=${SPOON_API_KEY}`)
 //         const recipes = axiosRes.data
 //         console.log('axios res recipeByIng', recipes)
 //         return res.status(200).json(recipes)
@@ -36,42 +40,6 @@ const Recipe = require("../models/recipe");
 //         return next(err);
 //     }
 // })
-
-// router.post('/detail', async (req, res, next) => {
-//     try {
-
-//         const { recipeId } = req.body;
-//         const axiosRes = await axios.get(`https://api.spoonacular.com/recipes/${recipeId}/information?includeNutrition=false&apiKey=${SECRET_KEY}`)
-//         const recipeDetail = axiosRes.data
-//         console.log('axios res recDetail', recipeDetail)
-//         return res.json(recipeDetail)
-//     } catch (err) {
-//         return next(err)
-//     }
-// })
-
-// both of these should require logged in!!!!!!!
-// TODO: login verification
-
-router.get('/ingredient', async (req, res, next) => {
-    try {
-
-        const { ingredients } = req.query
-        console.log('ingred', ingredients)
-        const numResults = 5;
-
-        const formattedIngredients = formatIngredients(ingredients);
-
-        // const axiosRes = await axios.get(recipeIngredientURL, params)
-
-        const axiosRes = await axios.get(`${recipeIngredientURL}?ingredients=${formattedIngredients}&number=${numResults}&apiKey=${SPOON_API_KEY}`)
-        const recipes = axiosRes.data
-        console.log('axios res recipeByIng', recipes)
-        return res.status(200).json(recipes)
-    } catch (err) {
-        return next(err);
-    }
-})
 
 
 router.get('/complex', async (req, res, next) => {
@@ -82,13 +50,11 @@ router.get('/complex', async (req, res, next) => {
 
         // constructs URL nutrient string, skips any nutrients user didn't include in form. 
         // &calories=800&sodium=600
-
-        // ****************************************************
-        // MUST BE maxSodium, minProtein etc.
-        // ****************************************************
         const nutrientArr = [];
         for (const [key, value] of Object.entries(formattedNutrients)) {
-            if (value !== '') {
+            // if nutrient form isn't touched values will be null. 
+            // blank string if nutrient form submitted with blank fields. 
+            if (value !== '' && value !== null) {
                 nutrientArr.push(`&${key}=${value}`)
             }
         }
@@ -97,10 +63,18 @@ router.get('/complex', async (req, res, next) => {
         console.log('nut str', nutrientStr)
         const numResults = 5;
         const formattedIngredients = formatIngredients(ingredients);
-      
-        const axiosRes = await axios.get(`${complexSearch}?includeIngredients=${formattedIngredients}${nutrientStr}&number=${numResults}&fillIngredients=true&apiKey=${SPOON_API_KEY}`)
+        let axiosRes
+        // handles empty nutrient string if user doesn't filter by any min/max nutrients. 
+        if (nutrientStr.length === 0) {
+            axiosRes = await axios.get(`${complexSearch}?includeIngredients=${formattedIngredients}&number=${numResults}&fillIngredients=true&apiKey=${SPOON_API_KEY}`)
+            console.log('no constraints added')
+        } else {
+            axiosRes = await axios.get(`${complexSearch}?includeIngredients=${formattedIngredients}${nutrientStr}&number=${numResults}&fillIngredients=true&apiKey=${SPOON_API_KEY}`)
+            console.log('constraints added')
+        }
+
         const recipes = axiosRes.data
-        // console.log('axios recipes res', recipes)
+        console.log('axios recipes res', recipes)
         return res.status(200).json(recipes)
 
     } catch (err) {
@@ -139,13 +113,15 @@ router.get('/:id', ensureCorrectUserOrAdmin, async (req, res, next) => {
 // save recipe for a given user
 router.post('/save/:id', ensureCorrectUserOrAdmin, async (req, res, next) => {
     try {
-        const recipeDetail = req.body
-        const recipeId = recipeDetail.id
-        const recipeName = recipeDetail.title
-        const token = res.locals.user
-        const userId = token.id
+        const recipeDetail = req.body;
+        const recipeId = recipeDetail.id;
+        const recipeName = recipeDetail.title;
+        const token = res.locals.user;
+        const userId = token.id;
+        const wwPoints = recipeDetail.weightWatcherSmartPoints;
+        // console.log('rec detail', recipeDetail)
 
-        const recipeRes = await Recipe.saveRecipe(userId, recipeName, recipeId)
+        const recipeRes = await Recipe.saveRecipe(userId, recipeName, recipeId, wwPoints)
         // change to 201 status
         return res.json({ savedRecipe: recipeRes })
     } catch (err) {
@@ -153,14 +129,14 @@ router.post('/save/:id', ensureCorrectUserOrAdmin, async (req, res, next) => {
     }
 })
 
-// deletion should be based on user/recipe id, both of which should be in URL params
-// ensureCorrentUserOrAdmin is setup to check username only
+// deletion is based on user/recipe id, both of which are in URL params
 router.delete('/delete/:id/:recipeId', ensureCorrectUserOrAdmin, async (req, res, next) => {
     try {
         // const token = res.locals.user
         // const userId = token.id
-        const { id, recipeId } = req.params
-        const deleteRes = await Recipe.remove(id, recipeId)
+        const { recipeId } = req.params
+        const deleteRes = await Recipe.remove(recipeId)
+        return res.json({ deleted: deleteRes });
     } catch (err) {
         console.log(err)
     }
